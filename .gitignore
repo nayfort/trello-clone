@@ -1,3 +1,28 @@
-.nuxt/
+# Dependencies
 node_modules/
+
+# Nuxt build output and caches
+.nuxt/
+.output/
+.data/
+.cache/
+dist/
+
+# Local environment files
+.env
+.env.*
+!.env.example
+
+# Logs and test artifacts
+*.log
+coverage/
+playwright-report/
+test-results/
+
+# Editor and operating system files
 .idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.swp
+*.swo

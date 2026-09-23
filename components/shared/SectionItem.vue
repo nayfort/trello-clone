@@ -8,7 +8,7 @@
 			v-model="tasks"
 			:group="{ name: 'tasks', pull: true, put: true }"
 			tag="ul"
-			class="space-y-2"
+			class="min-h-10 space-y-2"
 			item-key="id"
 			:animation="300"
 		>
@@ -138,7 +138,7 @@ const selectedPriority = computed({
 		return task.value.priority;
 	},
 	set(priority: string) {
-		task.value.priority = priority as Priority;
+		task.value.priority = (priority || Priority.Low) as Priority;
 	},
 });
 

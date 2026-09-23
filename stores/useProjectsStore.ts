@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { nanoid } from 'nanoid';
+import { projectStorage } from '~/lib/projectStorage';
 
 export interface Task {
 	id: string;
@@ -43,14 +44,18 @@ const createProject = (name: string): Project => ({
 export const useProjectsStore = defineStore('projects-store', {
 	state: () => ({
 		projects: [] as Project[],
+		initialized: false,
 	}),
 	actions: {
 		init() {
-			if (this.projects.length > 0) {
+			if (this.initialized) {
 				return;
 			}
 
-			this.projects.push(createProject('Test project'));
+			if (this.projects.length === 0) {
+				this.projects.push(createProject('Test project'));
+			}
+			this.initialized = true;
 		},
 		addProject(name: string) {
 			const trimmedName = name.trim();
@@ -164,5 +169,5 @@ export const useProjectsStore = defineStore('projects-store', {
 			}
 		},
 	},
-	persist: true,
+	persist: { storage: projectStorage },
 });

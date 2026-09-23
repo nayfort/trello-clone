@@ -1,7 +1,9 @@
 <template>
 	<NuxtLayout>
 		<NuxtRouteAnnouncer />
-		<NuxtPage />
+		<ClientOnly>
+			<NuxtPage />
+		</ClientOnly>
 	</NuxtLayout>
 </template>
 
@@ -11,5 +13,5 @@ useHead({
 });
 
 const dashboardStore = useProjectsStore();
-dashboardStore.init();
+onMounted(() => dashboardStore.init());
 </script>

@@ -3,7 +3,7 @@
 		class="bg-slate-300 dark:bg-slate-300 py-1 px-2 text-black rounded cursor-pointer"
 		:data-id="task.id"
 	>
-		<SharedModal v-if="!editName" :title="$t('DETAILS')">
+		<SharedModal v-if="!editName" :title="$t('DETAILS')" @close="cancelDraft">
 			<template #trigger>
 				<div class="flex items-center justify-between gap-2 w-full">
 					{{ task.name }}
@@ -186,7 +186,7 @@ const selectedPriority = computed({
 		return taskData.value.priority;
 	},
 	set(priority: string) {
-		taskData.value.priority = priority as Priority;
+		taskData.value.priority = (priority || Priority.Low) as Priority;
 	},
 });
 
@@ -219,6 +219,7 @@ const saveTask = () => {
 		status: props.sectionStatus,
 		task: {
 			...taskData.value,
+			status: props.sectionStatus,
 			name,
 			description,
 			priority: taskData.value.priority || Priority.Low,

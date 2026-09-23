@@ -14,9 +14,15 @@ const props = defineProps({
 	triggerLabel: { type: String, default: '' },
 });
 
+const emit = defineEmits<{ close: [] }>();
 const isOpen = ref(false);
 
-const closeDialog = () => {
+watch(isOpen, (open) => {
+	if (!open) emit('close');
+});
+
+const closeDialog = async () => {
+	await nextTick();
 	if (!props.locked) {
 		isOpen.value = false;
 	}
