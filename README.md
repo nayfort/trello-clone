@@ -17,8 +17,8 @@ A Kanban task manager built with Nuxt 3, Vue 3, and TypeScript. Organize project
 Use Node.js **22.12 or later** and npm.
 
 ```bash
-git clone https://github.com/nayfort/clone-trello.git
-cd clone-trello
+git clone https://github.com/nayfort/trello-clone.git
+cd trello-clone
 npm ci
 npm run dev
 ```
