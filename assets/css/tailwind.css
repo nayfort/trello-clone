@@ -1,78 +1,105 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
- 
+
 @layer base {
   :root {
+    color-scheme: light;
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
- 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
- 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
- 
+    --foreground: 220 24% 16%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
- 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
- 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
- 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
- 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
- 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
- 
-    --ring: 222.2 84% 4.9%;
- 
-    --radius: 0.5rem;
+    --card-foreground: 220 24% 16%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 24% 16%;
+    --muted: 220 16% 94%;
+    --muted-foreground: 220 10% 44%;
+    --border: 220 16% 89%;
+    --input: 220 16% 85%;
+    --primary: 217 80% 46%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 217 35% 94%;
+    --secondary-foreground: 217 65% 32%;
+    --accent: 220 16% 94%;
+    --accent-foreground: 220 24% 16%;
+    --destructive: 0 70% 47%;
+    --destructive-foreground: 0 0% 100%;
+    --ring: 217 80% 46%;
+    --radius: 0.75rem;
   }
- 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
- 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
- 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
- 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
- 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
- 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
- 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
- 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
- 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
- 
-    --ring: 212.7 26.8% 83.9%;
+    color-scheme: dark;
+    --background: 220 22% 10%;
+    --foreground: 220 15% 93%;
+    --card: 220 20% 13%;
+    --card-foreground: 220 15% 93%;
+    --popover: 220 20% 13%;
+    --popover-foreground: 220 15% 93%;
+    --muted: 220 18% 18%;
+    --muted-foreground: 220 12% 65%;
+    --border: 220 16% 23%;
+    --input: 220 16% 29%;
+    --primary: 217 90% 70%;
+    --primary-foreground: 222 40% 12%;
+    --secondary: 217 28% 21%;
+    --secondary-foreground: 217 85% 80%;
+    --accent: 220 18% 20%;
+    --accent-foreground: 220 15% 93%;
+    --destructive: 0 65% 55%;
+    --destructive-foreground: 0 0% 100%;
+    --ring: 217 90% 70%;
   }
-}
- 
-@layer base {
   * {
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    font-family:
+      ui-sans-serif,
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      sans-serif;
   }
+  button,
+  a,
+  input,
+  textarea,
+  select {
+    -webkit-tap-highlight-color: transparent;
+  }
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+  ::selection {
+    background: hsl(var(--primary) / 0.18);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+@layer components {
+  .page-header {
+    @apply flex items-center justify-between rounded-md bg-slate-200 px-4 py-3 dark:bg-slate-700;
+  }
+  .surface {
+    @apply rounded-xl border bg-card;
+  }
+  .field-label {
+    @apply mb-2 block text-sm font-medium;
+  }
+  .native-select {
+    @apply h-10 w-full rounded-md border border-input bg-card px-3 text-sm;
+  }
+}
+.sortable-ghost {
+  opacity: 0.3;
+}
+.sortable-drag {
+  transform: rotate(2deg);
 }

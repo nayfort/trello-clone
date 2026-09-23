@@ -1,37 +1,43 @@
-<template>
-	<header
-		v-if="project"
-		class="bg-slate-300 dark:bg-slate-500 px-4 py-2 flex items-center justify-between rounded-sm"
-	>
-		<h1 class="text-lg font-bold">{{ project.name }} tasks</h1>
-	</header>
-	<main
-		v-if="project"
-		class="flex flex-col md:flex-row gap-4 pt-4 overflow-x-auto h-[calc(100vh-90px)]"
-	>
-		<SharedSectionItem
-			v-for="section in project.dashboard"
-			:key="section.status"
-			:section="section"
-			:projectId="project.id"
-		/>
-	</main>
-	<div
-		v-else
-		class="flex min-h-[240px] items-center justify-center text-lg text-muted-foreground"
-	>
-		{{ $t('PROJECT_NOT_FOUND') }}
-	</div>
-</template>
-
-<script lang="ts" setup>
-const projectStore = useProjectsStore();
+<script setup lang="ts">
+import { ArrowLeft, FolderSearch } from 'lucide-vue-next';
+const store = useProjectsStore();
 const route = useRoute();
-
-const projectId = computed(() => {
-	const id = route.params.id;
-	return Array.isArray(id) ? id[0] : id;
+const localePath = useLocalePath();
+const project = computed(() => store.getProject(String(route.params.id ?? '')));
+useHead({
+  title: computed(() =>
+    project.value ? `${project.value.name} · Trello Clone` : 'Trello Clone',
+  ),
 });
-
-const project = computed(() => projectStore.getProject(projectId.value));
 </script>
+<template>
+  <template v-if="project">
+    <header class="page-header">
+      <h1
+        class="min-w-0 break-words text-lg font-semibold [overflow-wrap:anywhere]"
+      >
+        {{ $t('PROJECT_TASKS', { name: project.name }) }}
+      </h1>
+    </header>
+    <main
+      class="mt-5 grid items-start gap-4 md:grid-cols-3"
+      :aria-label="$t('PROJECT_BOARD')"
+    >
+      <SharedSectionItem
+        v-for="section in project.dashboard"
+        :key="section.status"
+        :section="section"
+        :project-id="project.id"
+      />
+    </main>
+  </template>
+  <div v-else class="py-20 text-center">
+    <FolderSearch class="mx-auto mb-4 h-8 w-8 text-muted-foreground" />
+    <h1 class="text-lg font-semibold">{{ $t('PROJECT_NOT_FOUND') }}</h1>
+    <NuxtLink
+      :to="localePath('/')"
+      class="mt-4 inline-flex items-center gap-2 rounded p-2 text-sm text-primary hover:underline"
+      ><ArrowLeft class="h-4 w-4" />{{ $t('GOTO_PROJECTS') }}</NuxtLink
+    >
+  </div>
+</template>

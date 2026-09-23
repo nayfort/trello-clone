@@ -1,239 +1,182 @@
-<template>
-	<li
-		class="bg-slate-300 dark:bg-slate-300 py-1 px-2 text-black rounded cursor-pointer"
-		:data-id="task.id"
-	>
-		<SharedModal v-if="!editName" :title="$t('DETAILS')" @close="cancelDraft">
-			<template #trigger>
-				<div class="flex items-center justify-between gap-2 w-full">
-					{{ task.name }}
-					<Icon
-						icon="mdi:rename"
-						@click.stop="startNameEdit"
-					/>
-				</div>
-			</template>
-			<template #header>
-				<div class="flex flex-col gap-2 p-5 border mt-3">
-					<div class="flex items-center gap-1">
-						<p class="font-bold text-slate-500">{{ $t('STATUS') }}:</p>
-						<p>{{ task.status }}</p>
-					</div>
-					<div class="flex items-center gap-1">
-						<p class="font-bold text-slate-500">{{ $t('PERFORMER') }}:</p>
-						<p v-if="task.performer && !detailsEdit">{{ task.performer }}</p>
-						<Icon
-							icon="mdi:add"
-							class="cursor-pointer"
-							v-if="!task.performer && !detailsEdit"
-							@click="startDetailsEdit"
-						/>
-						<SharedSelect
-							v-if="detailsEdit"
-							:placeholder="$t('SELECT_PERFORMER')"
-							:options="performerList"
-							v-model="taskData.performer"
-						/>
-					</div>
-					<div class="flex items-center gap-1">
-						<p class="font-bold text-slate-500">
-							{{ $t('RESPONSIBLE_PERSON') }}:
-						</p>
-						<p v-if="task.responsiblePerson && !detailsEdit">
-							{{ task.responsiblePerson }}
-						</p>
-						<Icon
-							icon="mdi:add"
-							class="cursor-pointer"
-							v-if="!task.responsiblePerson && !detailsEdit"
-							@click="startDetailsEdit"
-						/>
-						<SharedSelect
-							v-if="detailsEdit"
-							:placeholder="$t('SELECT_RESPONSIBLE_PERSON')"
-							:options="responsiblePersonList"
-							v-model="taskData.responsiblePerson"
-						/>
-					</div>
-				</div>
-			</template>
-			<template #content>
-				<ul class="flex flex-col gap-2 max-w-[450px]">
-					<li class="flex items-center gap-2">
-						<p class="font-bold text-slate-500">{{ $t('NAME') }}:</p>
-						<p class="text-lg" v-if="!detailsEdit">{{ task.name }}</p>
-						<Input v-else v-model="taskData.name" />
-					</li>
-					<li class="flex items-center gap-2 flex-wrap">
-						<p class="font-bold text-slate-500">{{ $t('DESCRIPTION') }}:</p>
-						<div class="text-lg break-words max-w-full" v-if="!detailsEdit">
-							{{ task.description }}
-						</div>
-						<Textarea v-else v-model="taskData.description" />
-					</li>
-					<li class="flex items-center gap-2">
-						<p class="font-bold text-slate-500">{{ $t('PRIORITY') }}:</p>
-						<div
-							v-if="!detailsEdit"
-							class="w-2 h-2 rounded-full p-2"
-							:class="{
-								'bg-blue-500': task.priority === Priority.Low,
-								'bg-yellow-500': task.priority === Priority.Medium,
-								'bg-red-500': task.priority === Priority.High,
-							}"
-						/>
-						<SharedSelect
-							v-else
-							:placeholder="$t('SELECT_PRIORITY')"
-							:options="PriorityOptions"
-							v-model="selectedPriority"
-						/>
-					</li>
-				</ul>
-			</template>
-			<template #footer>
-				<div class="flex justify-between w-full">
-					<Button variant="destructive" @click="deleteTask">
-						{{ $t('REMOVE') }}
-					</Button>
-					<Button
-						v-if="!detailsEdit"
-						variant="outline"
-						@click="startDetailsEdit"
-					>
-						{{ $t('EDIT') }}
-					</Button>
-					<Button
-						v-else
-						variant="outline"
-						@click="saveTask"
-					>
-						{{ $t('SAVE') }}
-					</Button>
-				</div>
-			</template>
-			<template #triggerButton>
-				<Button variant="outline" @click="cancelDraft">
-					{{ $t('CLOSE') }}
-				</Button>
-			</template>
-		</SharedModal>
-		<div class="flex items-center justify-between gap-2" v-if="editName">
-			<Input
-				v-model="taskData.name"
-				type="text"
-				class="w-full h-6 dark:bg-white"
-			/>
-			<Icon
-				icon="mdi:content-save"
-				@click="saveTask"
-			/>
-		</div>
-	</li>
-</template>
-
-<script lang="ts" setup>
-import { Icon } from '@iconify/vue';
+<script setup lang="ts">
+import { Pencil } from 'lucide-vue-next';
 import {
-	performerList,
-	PriorityOptions,
-	responsiblePersonList,
-} from '~/lib/constants';
-import { Priority, type Task } from '~/stores/useProjectsStore';
-
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+  DialogHeader,
+} from '~/components/ui/dialog';
+import { statusKeys } from '~/lib/board';
+import {
+  sectionStatuses,
+  type Task,
+  type TaskFields,
+  type SectionStatus,
+} from '~/types/board';
 const props = defineProps<{
-	projectId: string;
-	task: Task;
-	sectionStatus: string;
+  projectId: string;
+  task: Task;
+  sectionStatus: SectionStatus;
 }>();
-
-const emit = defineEmits<{
-	edit: [
-		payload: {
-			projectId: string;
-			status: string;
-			task: Task;
-		},
-	];
-	delete: [
-		payload: {
-			projectId: string;
-			status: string;
-			taskId: string;
-		},
-	];
-}>();
-
-const createTaskDraft = (task: Task): Task => ({ ...task });
-
-const taskData = ref<Task>(createTaskDraft(props.task));
-
-const editName = ref<boolean>(false);
-const detailsEdit = ref<boolean>(false);
-
-watch(
-	() => props.task,
-	(task) => {
-		if (!editName.value && !detailsEdit.value) {
-			taskData.value = createTaskDraft(task);
-		}
-	},
-	{ deep: true }
-);
-
-const selectedPriority = computed({
-	get() {
-		return taskData.value.priority;
-	},
-	set(priority: string) {
-		taskData.value.priority = (priority || Priority.Low) as Priority;
-	},
+const store = useProjectsStore();
+const open = ref(false);
+const editing = ref(false);
+const confirming = ref(false);
+const draftStatus = ref(props.sectionStatus);
+const uid = useId();
+const cardButton = ref<HTMLButtonElement>();
+watch(open, (value) => {
+  if (!value) {
+    editing.value = false;
+    nextTick(() => cardButton.value?.focus());
+  }
 });
-
-const startNameEdit = () => {
-	taskData.value = createTaskDraft(props.task);
-	editName.value = true;
-};
-
-const startDetailsEdit = () => {
-	taskData.value = createTaskDraft(props.task);
-	detailsEdit.value = true;
-};
-
-const cancelDraft = () => {
-	taskData.value = createTaskDraft(props.task);
-	editName.value = false;
-	detailsEdit.value = false;
-};
-
-const saveTask = () => {
-	const name = taskData.value.name.trim();
-	const description = taskData.value.description.trim();
-
-	if (!name || !description) {
-		return;
-	}
-
-	emit('edit', {
-		projectId: props.projectId,
-		status: props.sectionStatus,
-		task: {
-			...taskData.value,
-			status: props.sectionStatus,
-			name,
-			description,
-			priority: taskData.value.priority || Priority.Low,
-		},
-	});
-	editName.value = false;
-	detailsEdit.value = false;
-};
-
-const deleteTask = () => {
-	emit('delete', {
-		projectId: props.projectId,
-		status: props.sectionStatus,
-		taskId: props.task.id,
-	});
-};
+function edit() {
+  draftStatus.value = props.sectionStatus;
+  editing.value = true;
+}
+function save(fields: TaskFields) {
+  store.editTask({
+    projectId: props.projectId,
+    status: props.sectionStatus,
+    task: { ...props.task, ...fields },
+  });
+  if (draftStatus.value !== props.sectionStatus) {
+    open.value = false;
+    store.moveTask(
+      props.projectId,
+      props.task.id,
+      props.sectionStatus,
+      draftStatus.value,
+    );
+  }
+  editing.value = false;
+}
+function remove() {
+  open.value = false;
+  store.deleteTask({
+    projectId: props.projectId,
+    status: props.sectionStatus,
+    taskId: props.task.id,
+  });
+}
 </script>
+<template>
+  <li
+    class="group flex cursor-grab items-center gap-2 rounded-md bg-slate-200 px-3 py-2.5 active:cursor-grabbing dark:bg-slate-700"
+    :data-id="task.id"
+  >
+    <button
+      ref="cardButton"
+      type="button"
+      class="min-w-0 flex-1 break-words rounded-sm text-left text-sm font-medium leading-relaxed [overflow-wrap:anywhere] hover:text-primary"
+      @click="open = true"
+    >
+      {{ task.name }}
+    </button>
+    <button
+      type="button"
+      class="shrink-0 rounded p-1.5 text-muted-foreground hover:bg-card hover:text-foreground"
+      :aria-label="$t('EDIT_TASK', { name: task.name })"
+      @click="
+        open = true;
+        edit();
+      "
+    >
+      <Pencil class="h-3.5 w-3.5" />
+    </button>
+    <Dialog v-model:open="open">
+      <DialogContent>
+        <DialogHeader
+          ><DialogTitle>{{
+            $t(editing ? 'EDIT_TASK_TITLE' : 'DETAILS')
+          }}</DialogTitle
+          ><DialogDescription>{{
+            $t('TASK_DIALOG_DESCRIPTION')
+          }}</DialogDescription></DialogHeader
+        >
+        <SharedTaskForm
+          v-if="editing"
+          :initial-value="task"
+          :submit-label="$t('SAVE')"
+          @submit="save"
+          @cancel="editing = false"
+        >
+          <div>
+            <label :for="`${uid}-status`" class="field-label">{{
+              $t('STATUS')
+            }}</label
+            ><select
+              :id="`${uid}-status`"
+              v-model="draftStatus"
+              class="native-select"
+            >
+              <option
+                v-for="status in sectionStatuses"
+                :key="status"
+                :value="status"
+              >
+                {{ $t(statusKeys[status]) }}
+              </option>
+            </select>
+          </div>
+        </SharedTaskForm>
+        <template v-else>
+          <div class="flex items-center gap-2">
+            <SharedPriorityBadge :priority="task.priority" /><span
+              class="rounded-md bg-muted px-2 py-1 text-xs"
+              >{{ $t(statusKeys[task.status]) }}</span
+            >
+          </div>
+          <h3
+            class="break-words text-xl font-semibold [overflow-wrap:anywhere]"
+          >
+            {{ task.name }}
+          </h3>
+          <p
+            class="max-h-64 overflow-y-auto whitespace-pre-wrap break-words text-sm leading-relaxed text-muted-foreground [overflow-wrap:anywhere]"
+          >
+            {{ task.description }}
+          </p>
+          <dl class="grid grid-cols-2 gap-4 rounded-lg bg-muted/60 p-4 text-sm">
+            <div>
+              <dt class="mb-1 text-xs text-muted-foreground">
+                {{ $t('PERFORMER') }}
+              </dt>
+              <dd>{{ task.performer || $t('UNASSIGNED') }}</dd>
+            </div>
+            <div>
+              <dt class="mb-1 text-xs text-muted-foreground">
+                {{ $t('RESPONSIBLE_PERSON') }}
+              </dt>
+              <dd>{{ task.responsiblePerson || $t('UNASSIGNED') }}</dd>
+            </div>
+          </dl>
+          <div class="flex flex-wrap justify-between gap-2 border-t pt-4">
+            <Button
+              variant="ghost"
+              class="text-destructive hover:bg-destructive/10 hover:text-destructive"
+              @click="confirming = true"
+              >{{ $t('REMOVE') }}</Button
+            >
+            <div class="flex gap-2">
+              <Button variant="outline" @click="open = false">{{
+                $t('CLOSE')
+              }}</Button
+              ><Button @click="edit"
+                ><Pencil class="mr-2 h-3.5 w-3.5" />{{ $t('EDIT') }}</Button
+              >
+            </div>
+          </div>
+        </template>
+      </DialogContent>
+    </Dialog>
+    <SharedConfirmDialog
+      v-model:open="confirming"
+      :title="$t('DELETE_TASK')"
+      :description="$t('DELETE_TASK_DESCRIPTION', { name: task.name })"
+      @confirm="remove"
+    />
+  </li>
+</template>

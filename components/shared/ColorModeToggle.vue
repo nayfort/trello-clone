@@ -1,23 +1,21 @@
-<template>
-	<Button variant="ghost" size="icon" @click="isDark = !isDark">
-		<Icon
-			:icon="isDark ? 'radix-icons:sun' : 'radix-icons:moon'"
-			class="h-5 w-5"
-		/>
-		<span class="sr-only">Theme</span>
-	</Button>
-</template>
-
 <script setup lang="ts">
-import { Icon } from '@iconify/vue';
+import { Moon, Sun } from 'lucide-vue-next';
 const colorMode = useColorMode();
-
-const isDark = computed({
-	get() {
-		return colorMode.value === 'dark';
-	},
-	set() {
-		colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark';
-	},
-});
 </script>
+<template>
+  <Button
+    variant="ghost"
+    size="icon"
+    :aria-label="$t('THEME')"
+    @click="
+      colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark'
+    "
+  >
+    <ClientOnly
+      ><Sun v-if="colorMode.value === 'dark'" class="h-[18px] w-[18px]" /><Moon
+        v-else
+        class="h-[18px] w-[18px]" /><template #fallback
+        ><span class="h-[18px] w-[18px]" /></template
+    ></ClientOnly>
+  </Button>
+</template>

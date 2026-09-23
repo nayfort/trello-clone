@@ -1,177 +1,110 @@
-<template>
-	<section
-		class="bg-white dark:bg-slate-500 rounded-lg p-4 min-w-[300px] border h-max"
-	>
-		<h2 class="text-lg font-bold mb-3">{{ section.status }}</h2>
-
-		<draggable
-			v-model="tasks"
-			:group="{ name: 'tasks', pull: true, put: true }"
-			tag="ul"
-			class="min-h-10 space-y-2"
-			item-key="id"
-			:animation="300"
-		>
-			<template #item="{ element }">
-				<SharedTaskItem
-					:key="element.id"
-					:task="element"
-					:sectionStatus="section.status"
-					:projectId="projectId"
-					@edit="projectStore.editTask"
-					@delete="projectStore.deleteTask"
-				/>
-			</template>
-		</draggable>
-
-		<div class="flex justify-end mt-5">
-			<SharedModal
-				:title="$t('ADD_TASK')"
-				:locked="isLocked"
-				:trigger-label="$t('ADD_TASK')"
-			>
-				<template #trigger>
-					<Icon
-						icon="mdi:add"
-						class="cursor-pointer"
-					/>
-				</template>
-				<template #content>
-					<div class="flex flex-col gap-3">
-						<Input
-							type="text"
-							:placeholder="`${$t('NAME')}*`"
-							v-model="task.name"
-							:class="errors.name && 'border-red-500'"
-						/>
-						<Textarea
-							v-model="task.description"
-							:placeholder="`${$t('DESCRIPTION')}*`"
-							:class="errors.description && 'border-red-500'"
-						/>
-						<SharedSelect
-							:placeholder="$t('SELECT_RESPONSIBLE_PERSON')"
-							:options="responsiblePersonList"
-							v-model="task.responsiblePerson"
-						/>
-						<SharedSelect
-							:placeholder="$t('SELECT_PERFORMER')"
-							:options="performerList"
-							v-model="task.performer"
-						/>
-						<SharedSelect
-							:placeholder="$t('SELECT_PRIORITY')"
-							:options="PriorityOptions"
-							v-model="selectedPriority"
-						/>
-					</div>
-				</template>
-				<template #triggerButton>
-					<Button variant="outline" @click="addTask"> {{ $t('ADD') }} </Button>
-				</template>
-			</SharedModal>
-		</div>
-	</section>
-</template>
-
 <script setup lang="ts">
 import draggable from 'vuedraggable';
-import { Icon } from '@iconify/vue';
+import { Plus } from 'lucide-vue-next';
 import { nanoid } from 'nanoid';
 import {
-	Priority,
-	useProjectsStore,
-	type Section,
-	type Task,
-} from '~/stores/useProjectsStore';
-import {
-	PriorityOptions,
-	performerList,
-	responsiblePersonList,
-} from '~/lib/constants';
-
-interface TaskFormState {
-	name: string;
-	description: string;
-	performer: string;
-	responsiblePerson: string;
-	priority: Priority;
-}
-
-const props = defineProps<{
-	section: Section;
-	projectId: string;
-}>();
-
-const projectStore = useProjectsStore();
-
-const errors = ref({
-	name: false,
-	description: false,
-});
-
-const isLocked = computed(() => {
-	return errors.value.name || errors.value.description;
-});
-
-const createEmptyTask = (): TaskFormState => ({
-	name: '',
-	description: '',
-	performer: '',
-	responsiblePerson: '',
-	priority: Priority.Low,
-});
-
-const task = ref<TaskFormState>(createEmptyTask());
-
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+  DialogHeader,
+  DialogTrigger,
+} from '~/components/ui/dialog';
+import { statusKeys } from '~/lib/board';
+import type { Section, Task, TaskFields } from '~/types/board';
+const props = defineProps<{ section: Section; projectId: string }>();
+const store = useProjectsStore();
+const open = ref(false);
+const dragging = ref(false);
 const tasks = computed<Task[]>({
-	get() {
-		return props.section.tasks;
-	},
-	set(value) {
-		projectStore.setSectionTasks(props.projectId, props.section.status, value);
-	},
+  get: () => props.section.tasks,
+  set: (tasks) =>
+    store.setSectionTasks(props.projectId, props.section.status, tasks),
 });
-
-const selectedPriority = computed({
-	get() {
-		return task.value.priority;
-	},
-	set(priority: string) {
-		task.value.priority = (priority || Priority.Low) as Priority;
-	},
-});
-
-const addTask = () => {
-	const name = task.value.name.trim();
-	const description = task.value.description.trim();
-
-	if (!name) {
-		errors.value.name = true;
-	} else {
-		errors.value.name = false;
-	}
-
-	if (!description) {
-		errors.value.description = true;
-	} else {
-		errors.value.description = false;
-	}
-
-	if (errors.value.name || errors.value.description) {
-		return;
-	}
-
-	projectStore.addTask(props.projectId, props.section.status, {
-		id: nanoid(),
-		name,
-		responsiblePerson: task.value.responsiblePerson,
-		performer: task.value.performer,
-		description,
-		priority: task.value.priority,
-		status: props.section.status,
-	});
-
-	task.value = createEmptyTask();
-};
+function addTask(fields: TaskFields) {
+  store.addTask(props.projectId, props.section.status, {
+    ...fields,
+    id: nanoid(),
+    status: props.section.status,
+  });
+  open.value = false;
+}
 </script>
+<template>
+  <section
+    class="min-w-0 rounded-lg border bg-card p-4"
+    :aria-label="$t(statusKeys[section.status])"
+  >
+    <header class="mb-4 flex items-center gap-2.5 px-1 pt-1">
+      <span
+        class="h-2 w-2 rounded-full"
+        :class="{
+          'bg-slate-400': section.status === 'TODO',
+          'bg-amber-500': section.status === 'In progress',
+          'bg-primary': section.status === 'Done',
+        }"
+      />
+      <h2 class="text-sm font-semibold">
+        {{ $t(statusKeys[section.status]) }}
+      </h2>
+      <span
+        class="rounded bg-card px-1.5 py-0.5 text-[11px] font-medium tabular-nums text-muted-foreground"
+        >{{ tasks.length }}</span
+      >
+    </header>
+    <div class="relative">
+      <draggable
+        v-model="tasks"
+        :group="`tasks-${projectId}`"
+        tag="ul"
+        class="min-h-[48px] space-y-3"
+        item-key="id"
+        :animation="180"
+        :delay="180"
+        :delay-on-touch-only="true"
+        :touch-start-threshold="5"
+        filter="input, select, textarea"
+        :prevent-on-filter="false"
+        @start="dragging = true"
+        @end="dragging = false"
+      >
+        <template #item="{ element }"
+          ><SharedTaskItem
+            :task="element"
+            :project-id="projectId"
+            :section-status="section.status"
+        /></template>
+      </draggable>
+      <div
+        v-if="!tasks.length && !dragging"
+        class="pointer-events-none absolute inset-0 flex items-center justify-center rounded-lg border border-dashed text-xs text-muted-foreground"
+      >
+        {{ $t('EMPTY_COLUMN') }}
+      </div>
+    </div>
+    <Dialog v-model:open="open">
+      <DialogTrigger as-child
+        ><Button
+          variant="ghost"
+          class="mt-3 w-full justify-start gap-2 text-muted-foreground"
+          :aria-label="$t('ADD_TASK')"
+          ><Plus class="h-4 w-4" />{{ $t('ADD_TASK') }}</Button
+        ></DialogTrigger
+      >
+      <DialogContent
+        ><DialogHeader
+          ><DialogTitle>{{ $t('ADD_TASK') }}</DialogTitle
+          ><DialogDescription>{{
+            $t('ADD_TASK_DESCRIPTION', {
+              status: $t(statusKeys[section.status]),
+            })
+          }}</DialogDescription></DialogHeader
+        ><SharedTaskForm
+          v-if="open"
+          :submit-label="$t('ADD')"
+          @submit="addTask"
+          @cancel="open = false"
+      /></DialogContent>
+    </Dialog>
+  </section>
+</template>

@@ -27,13 +27,15 @@ Open [localhost:3000](http://localhost:3000). A sample project is created on the
 
 ## Commands
 
-| Command | Description |
-| --- | --- |
-| `npm run dev` | Start the development server. |
-| `npm run typecheck` | Check TypeScript and Vue component types. |
-| `npm test` | Run the browser regression tests. |
-| `npm run build` | Create the production build. |
-| `npm run preview` | Preview the production build locally. |
+| Command                | Description                               |
+| ---------------------- | ----------------------------------------- |
+| `npm run dev`          | Start the development server.             |
+| `npm run typecheck`    | Check TypeScript and Vue component types. |
+| `npm test`             | Run the browser regression tests.         |
+| `npm run build`        | Create the production build.              |
+| `npm run preview`      | Preview the production build locally.     |
+| `npm run format`       | Format source files with Prettier.        |
+| `npm run format:check` | Check source formatting.                  |
 
 Install Chromium before running the browser tests:
 
@@ -42,7 +44,9 @@ npx playwright install chromium
 npm test
 ```
 
-The tests cover project management, task validation and editing, drag and drop, persistence, migration of existing data, language selection, and theme switching. Playwright starts the development server automatically.
+The tests cover project management, task validation and editing, drag and drop, keyboard controls, deletion confirmation, persistence and migration, storage recovery, mobile navigation, localization, and theme switching. Playwright starts the development server automatically.
+
+GitHub Actions runs formatting, type checks, a production build, and browser tests on pushes to `main` and pull requests.
 
 ## Production
 
@@ -74,6 +78,11 @@ layouts/            Application layout
 lib/                Shared constants, storage, and utilities
 pages/              Project list and board routes
 public/             Static assets
-stores/             Pinia store and task data models
+stores/             Project and task state transitions
+types/              Shared board data models
 tests/              Browser regression tests
 ```
+
+## Code organization
+
+Task creation and editing share one validated form. The Pinia store owns board mutations, while `lib/board.ts` contains shared validation and status labels. The persistence adapter validates saved data and migrates existing cookie storage. Reusable dialog primitives manage focus and keyboard interaction.

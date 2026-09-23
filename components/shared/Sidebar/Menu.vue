@@ -1,34 +1,40 @@
-<template>
-	<div>
-		<header class="p-4">
-			<div class="flex items-center gap-2 w-max">
-				<p class="font-bold">Trello Clone</p>
-			</div>
-		</header>
-		<div class="px-2 pt-2 grow">
-			<div class="grid gap-2">
-				<NuxtLink
-					v-for="item in items"
-					:key="item.title"
-					:to="localePath(item.href)"
-					@click="emit('close')"
-					class="flex items-center gap-2 px-2 py-1 transition rounded cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-500"
-				>
-					<Icon :icon="item.icon" class="h-5 w-5" />
-					<span>{{ $t(item.title) }}</span>
-				</NuxtLink>
-			</div>
-		</div>
-	</div>
-</template>
-
-<script lang="ts" setup>
-import { Icon } from '@iconify/vue';
+<script setup lang="ts">
+import { Folder, LayoutDashboard } from 'lucide-vue-next';
 const localePath = useLocalePath();
-const emit = defineEmits(['close']);
-
-const items = ref([
-	{ title: 'PROJECTS', href: '/', icon: 'mdi:folder' },
-	{ title: 'DASHBOARD', href: '/dashboard', icon: 'mdi:view-dashboard' },
-]);
+const route = useRoute();
+const emit = defineEmits<{ close: [] }>();
 </script>
+<template>
+  <div>
+    <header class="px-5 py-6">
+      <NuxtLink
+        :to="localePath('/')"
+        class="rounded text-base font-semibold"
+        @click="emit('close')"
+        >Trello Clone</NuxtLink
+      >
+    </header>
+    <nav :aria-label="$t('WORKSPACE')" class="space-y-1 px-3">
+      <NuxtLink
+        v-for="item in [
+          { href: '/', title: 'PROJECTS', icon: Folder },
+          { href: '/dashboard', title: 'DASHBOARD', icon: LayoutDashboard },
+        ]"
+        :key="item.href"
+        :to="localePath(item.href)"
+        :aria-current="
+          route.path === localePath(item.href) ? 'page' : undefined
+        "
+        class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        :class="
+          route.path === localePath(item.href) &&
+          'bg-secondary text-secondary-foreground'
+        "
+        @click="emit('close')"
+        ><component :is="item.icon" class="h-[18px] w-[18px]" />{{
+          $t(item.title)
+        }}</NuxtLink
+      >
+    </nav>
+  </div>
+</template>

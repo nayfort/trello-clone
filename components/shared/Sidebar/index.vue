@@ -1,40 +1,45 @@
-<template>
-	<div class="relative">
-		<div
-			class="z-50 flex items-center justify-between w-full h-full p-4 lg:hidden"
-		>
-			<Icon
-				class="z-50 cursor-pointer left-2 top-2 w-10 h-10"
-				icon="mdi:menu"
-				@click="open = true"
-			/>
-			<div
-				v-if="open"
-				class="fixed bg-white dark:bg-gray-500 top-0 left-0 z-[999] w-full h-screen"
-			>
-				<Icon
-					class="absolute z-50 cursor-pointer right-4 top-4 w-10 h-10"
-					icon="mdi:close"
-					@click="open = false"
-				/>
-				<SharedSidebarMenu @close="open = false" />
-				<SharedColorModeToggle class="absolute right-20 top-4" />
-				<SharedLanguageToggle class="mt-10" />
-			</div>
-		</div>
-		<div
-			class="hidden lg:flex w-[250px] h-screen flex-col justify-between border-r"
-		>
-			<SharedSidebarMenu />
-			<div class="flex items-center justify-between ga-3 p-3">
-				<SharedColorModeToggle />
-				<SharedLanguageToggle />
-			</div>
-		</div>
-	</div>
-</template>
-
 <script setup lang="ts">
-import { Icon } from '@iconify/vue';
+import { Menu, Columns3 } from 'lucide-vue-next';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+  DialogTrigger,
+} from '~/components/ui/dialog';
 const open = ref(false);
 </script>
+
+<template>
+  <aside
+    class="hidden lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col border-r bg-card"
+  >
+    <SharedSidebarMenu class="min-h-0 flex-1" />
+    <div class="flex items-center justify-between border-t p-4">
+      <SharedColorModeToggle /><SharedLanguageToggle />
+    </div>
+  </aside>
+  <header
+    class="flex items-center justify-between border-b bg-card px-5 py-3 lg:hidden"
+  >
+    <span class="flex items-center gap-2 text-sm font-semibold"
+      ><Columns3 class="h-5 w-5 text-primary" />Trello Clone</span
+    >
+    <Dialog v-model:open="open">
+      <DialogTrigger as-child
+        ><Button variant="ghost" size="icon" :aria-label="$t('OPEN_MENU')"
+          ><Menu class="h-5 w-5" /></Button
+      ></DialogTrigger>
+      <DialogContent class="max-w-sm">
+        <DialogTitle class="sr-only">{{ $t('WORKSPACE') }}</DialogTitle>
+        <DialogDescription class="sr-only">{{
+          $t('NAVIGATION')
+        }}</DialogDescription>
+        <SharedSidebarMenu class="min-h-[360px]" @close="open = false" />
+        <div class="flex items-center justify-between border-t pt-3">
+          <SharedColorModeToggle /><SharedLanguageToggle />
+        </div>
+      </DialogContent>
+    </Dialog>
+  </header>
+</template>
