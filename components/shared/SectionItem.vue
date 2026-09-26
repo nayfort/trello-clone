@@ -16,18 +16,28 @@ const props = defineProps<{ section: Section; projectId: string }>();
 const store = useProjectsStore();
 const open = ref(false);
 const dragging = ref(false);
-const tasks = computed<Task[]>({
-  get: () => props.section.tasks,
-  set: (tasks) =>
-    store.setSectionTasks(props.projectId, props.section.status, tasks),
+const tasks = computed(() =>
+  store.filtered
+    ? props.section.tasks.filter((task) => store.matches(task))
+    : props.section.tasks,
+);
+watch(
+  open,
+  (value) => {
+    store.editLocks += value ? 1 : -1;
+  },
+  { flush: 'sync' },
+);
+onBeforeUnmount(() => {
+  if (open.value) store.editLocks--;
 });
-function addTask(fields: TaskFields) {
-  store.addTask(props.projectId, props.section.status, {
+async function addTask(fields: TaskFields) {
+  const saved = await store.addTask(props.projectId, props.section.status, {
     ...fields,
     id: nanoid(),
     status: props.section.status,
   });
-  open.value = false;
+  if (saved) open.value = false;
 }
 </script>
 <template>
@@ -54,7 +64,13 @@ function addTask(fields: TaskFields) {
     </header>
     <div class="relative">
       <draggable
-        v-model="tasks"
+        :list="tasks"
+        :disabled="
+          !store.writable ||
+          store.busy ||
+          store.filtered ||
+          store.getProject(projectId)?.archived
+        "
         :group="`tasks-${projectId}`"
         tag="ul"
         class="min-h-[48px] space-y-3"
@@ -65,8 +81,14 @@ function addTask(fields: TaskFields) {
         :touch-start-threshold="5"
         filter="input, select, textarea"
         :prevent-on-filter="false"
-        @start="dragging = true"
-        @end="dragging = false"
+        @start="
+          dragging = true;
+          store.beginDrag(projectId);
+        "
+        @end="
+          dragging = false;
+          store.finishDrag(projectId);
+        "
       >
         <template #item="{ element }"
           ><SharedTaskItem
@@ -82,7 +104,10 @@ function addTask(fields: TaskFields) {
         {{ $t('EMPTY_COLUMN') }}
       </div>
     </div>
-    <Dialog v-model:open="open">
+    <Dialog
+      v-if="store.writable && !store.getProject(projectId)?.archived"
+      v-model:open="open"
+    >
       <DialogTrigger as-child
         ><Button
           variant="ghost"

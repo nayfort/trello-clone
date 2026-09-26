@@ -25,6 +25,19 @@ const editing = ref(false);
 const confirming = ref(false);
 const draftStatus = ref(props.sectionStatus);
 const uid = useId();
+const readonly = computed(
+  () => !store.writable || store.getProject(props.projectId)?.archived,
+);
+watch(
+  open,
+  (value) => {
+    store.editLocks += value ? 1 : -1;
+  },
+  { flush: 'sync' },
+);
+onBeforeUnmount(() => {
+  if (open.value) store.editLocks--;
+});
 const cardButton = ref<HTMLButtonElement>();
 watch(open, (value) => {
   if (!value) {
@@ -36,30 +49,22 @@ function edit() {
   draftStatus.value = props.sectionStatus;
   editing.value = true;
 }
-function save(fields: TaskFields) {
-  store.editTask({
+async function save(fields: TaskFields) {
+  const saved = await store.editTask({
     projectId: props.projectId,
     status: props.sectionStatus,
     task: { ...props.task, ...fields },
+    newStatus: draftStatus.value,
   });
-  if (draftStatus.value !== props.sectionStatus) {
-    open.value = false;
-    store.moveTask(
-      props.projectId,
-      props.task.id,
-      props.sectionStatus,
-      draftStatus.value,
-    );
-  }
-  editing.value = false;
+  if (saved) editing.value = false;
 }
-function remove() {
-  open.value = false;
-  store.deleteTask({
+async function remove() {
+  const saved = await store.deleteTask({
     projectId: props.projectId,
     status: props.sectionStatus,
     taskId: props.task.id,
   });
+  if (saved) open.value = false;
 }
 </script>
 <template>
@@ -76,6 +81,7 @@ function remove() {
       {{ task.name }}
     </button>
     <button
+      v-if="!readonly"
       type="button"
       class="shrink-0 rounded p-1.5 text-muted-foreground hover:bg-card hover:text-foreground"
       :aria-label="$t('EDIT_TASK', { name: task.name })"
@@ -144,17 +150,54 @@ function remove() {
               <dt class="mb-1 text-xs text-muted-foreground">
                 {{ $t('PERFORMER') }}
               </dt>
-              <dd>{{ task.performer || $t('UNASSIGNED') }}</dd>
+              <dd>
+                {{ store.memberName(task.performer) || $t('UNASSIGNED') }}
+              </dd>
             </div>
             <div>
               <dt class="mb-1 text-xs text-muted-foreground">
                 {{ $t('RESPONSIBLE_PERSON') }}
               </dt>
-              <dd>{{ task.responsiblePerson || $t('UNASSIGNED') }}</dd>
+              <dd>
+                {{
+                  store.memberName(task.responsiblePerson) || $t('UNASSIGNED')
+                }}
+              </dd>
             </div>
           </dl>
+          <div v-if="task.dueDate" class="text-sm">
+            <span class="text-muted-foreground">{{ $t('DUE_DATE') }}: </span
+            >{{ task.dueDate }}
+          </div>
+          <div v-if="task.labels.length" class="flex flex-wrap gap-2">
+            <span
+              v-for="label in task.labels"
+              :key="label"
+              class="rounded bg-secondary px-2 py-1 text-xs"
+              >{{ label }}</span
+            >
+          </div>
+          <div v-if="task.checklist.length">
+            <h4 class="mb-2 text-sm font-medium">{{ $t('CHECKLIST') }}</h4>
+            <ul class="space-y-1">
+              <li
+                v-for="item in task.checklist"
+                :key="item.id"
+                class="text-sm"
+                :class="item.done && 'line-through text-muted-foreground'"
+              >
+                {{ item.done ? '✓' : '○' }} {{ item.text }}
+              </li>
+            </ul>
+          </div>
+          <SharedTaskComments
+            :board-id="projectId"
+            :task-id="task.id"
+            :readonly="readonly"
+          />
           <div class="flex flex-wrap justify-between gap-2 border-t pt-4">
             <Button
+              v-if="!readonly"
               variant="ghost"
               class="text-destructive hover:bg-destructive/10 hover:text-destructive"
               @click="confirming = true"
@@ -164,7 +207,7 @@ function remove() {
               <Button variant="outline" @click="open = false">{{
                 $t('CLOSE')
               }}</Button
-              ><Button @click="edit"
+              ><Button v-if="!readonly" @click="edit"
                 ><Pencil class="mr-2 h-3.5 w-3.5" />{{ $t('EDIT') }}</Button
               >
             </div>

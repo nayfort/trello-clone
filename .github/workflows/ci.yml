@@ -1,14 +1,28 @@
 name: Quality checks
 on:
   push:
-    branches: [main]
+    branches: [main, feature/**]
   pull_request:
 permissions:
   contents: read
 jobs:
   verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: trello
+          POSTGRES_USER: trello
+          POSTGRES_PASSWORD: trello_local
+        ports: [54329:5432]
+        options: >-
+          --health-cmd "pg_isready -U trello -d trello"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+      mail:
+        image: axllent/mailpit:v1.27
+        ports: [10259:1025, 8029:8025]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -16,8 +30,15 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run setup
       - run: npm run format:check
       - run: npm run typecheck
-      - run: npm run build
+      - run: npm run test:unit
       - run: npx playwright install --with-deps chromium
-      - run: npm test
+      - run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-results
+          path: test-results/
+          retention-days: 7

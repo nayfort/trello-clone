@@ -13,6 +13,9 @@ export function emptyTask(): TaskFields {
     performer: '',
     responsiblePerson: '',
     priority: Priority.Low,
+    dueDate: '',
+    labels: [],
+    checklist: [],
   };
 }
 
