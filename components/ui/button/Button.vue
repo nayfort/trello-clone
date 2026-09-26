@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import type { HTMLAttributes } from 'vue';
+import { ref, onMounted, type HTMLAttributes } from 'vue';
 import { Primitive, type PrimitiveProps } from 'radix-vue';
 import { type ButtonVariants, buttonVariants } from '.';
 import { cn } from '@/lib/utils';
 
 interface Props extends PrimitiveProps {
+  disabled?: boolean;
   variant?: ButtonVariants['variant'];
   size?: ButtonVariants['size'];
   class?: HTMLAttributes['class'];
@@ -13,11 +14,16 @@ interface Props extends PrimitiveProps {
 const props = withDefaults(defineProps<Props>(), {
   as: 'button',
 });
+const mounted = ref(false);
+onMounted(() => {
+  mounted.value = true;
+});
 </script>
 
 <template>
   <Primitive
     :as="as"
+    :disabled="props.disabled || !mounted"
     :as-child="asChild"
     :class="cn(buttonVariants({ variant, size }), props.class)"
   >

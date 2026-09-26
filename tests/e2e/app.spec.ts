@@ -664,3 +664,25 @@ test('new teammates return to their invitation after registering and verifying e
   ).toBe(team.id);
   await newcomer.close();
 });
+
+test('slow client startup preserves the first board interaction', async ({
+  page,
+  context,
+}) => {
+  await account(context);
+  const team = await workspace(context.request);
+  await board(context.request, team.id);
+  await page.route('**/_nuxt/*.js', async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    await route.continue();
+  });
+  await page.goto('/');
+  await page.getByRole('link', { name: 'Test project', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Add task', exact: true })
+    .first()
+    .click();
+  await expect(
+    page.getByRole('dialog').getByLabel('Name', { exact: false }),
+  ).toBeVisible();
+});
