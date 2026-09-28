@@ -252,12 +252,7 @@ test('mobile navigation, localized form and focus work without overflow', async 
   await page.goto('/');
   await expect(page.getByPlaceholder('Enter project name')).toBeVisible();
   await createProject(page);
-  await page.getByRole('button', { name: 'Open navigation' }).click();
-  await page
-    .getByRole('dialog')
-    .getByRole('button', { name: 'UK', exact: true })
-    .click();
-  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: 'UK', exact: true }).click();
   await page.getByRole('link', { name: 'Test project', exact: true }).click();
   await page
     .getByRole('button', { name: 'Додати завдання', exact: true })
@@ -278,6 +273,11 @@ test('mobile navigation, localized form and focus work without overflow', async 
   await expect(
     page.getByRole('button', { name: 'Додати завдання', exact: true }).first(),
   ).toBeFocused();
+  await page.getByRole('link', { name: 'До проектів', exact: true }).click();
+  await expect(page).toHaveURL('/uk');
+  await expect(
+    page.getByRole('link', { name: 'Test project', exact: true }),
+  ).toBeVisible();
 });
 
 test('migration preserves an empty workspace', async ({ page, context }) => {
