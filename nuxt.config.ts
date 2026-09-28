@@ -9,6 +9,7 @@ export default defineNuxtConfig({
     'shadcn-nuxt',
     '@nuxtjs/color-mode',
     '@pinia/nuxt',
+    'pinia-plugin-persistedstate/nuxt',
     '@nuxtjs/i18n',
   ],
   colorMode: {

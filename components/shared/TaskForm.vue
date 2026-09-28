@@ -1,26 +1,14 @@
 <script setup lang="ts">
 import { emptyTask, normalizeTask } from '~/lib/board';
-import { PriorityOptions } from '~/lib/constants';
-import { nanoid } from 'nanoid';
+import {
+  performerList,
+  responsiblePersonList,
+  PriorityOptions,
+} from '~/lib/constants';
 import type { TaskFields } from '~/types/board';
 const props = defineProps<{ initialValue?: TaskFields; submitLabel: string }>();
 const emit = defineEmits<{ submit: [fields: TaskFields]; cancel: [] }>();
-const store = useProjectsStore();
-const draft = reactive(
-  JSON.parse(JSON.stringify(props.initialValue ?? emptyTask())) as TaskFields,
-);
-const labels = ref(draft.labels.join(', '));
-const checklistText = ref('');
-function addChecklist() {
-  if (checklistText.value.trim()) {
-    draft.checklist.push({
-      id: nanoid(),
-      text: checklistText.value.trim(),
-      done: false,
-    });
-    checklistText.value = '';
-  }
-}
+const draft = reactive({ ...(props.initialValue ?? emptyTask()) });
 const submitted = ref(false);
 const uid = useId();
 const errors = computed(() => ({
@@ -29,14 +17,6 @@ const errors = computed(() => ({
 }));
 function submit() {
   submitted.value = true;
-  draft.labels = [
-    ...new Set(
-      labels.value
-        .split(',')
-        .map((label) => label.trim())
-        .filter(Boolean),
-    ),
-  ].slice(0, 10);
   const fields = normalizeTask(draft);
   if (!fields) {
     nextTick(() =>
@@ -107,12 +87,8 @@ function submit() {
           class="native-select"
         >
           <option value="">{{ $t('UNASSIGNED') }}</option>
-          <option
-            v-for="person in store.members"
-            :key="person.id"
-            :value="person.id"
-          >
-            {{ person.name }}
+          <option v-for="person in performerList" :key="person" :value="person">
+            {{ person }}
           </option>
         </select>
       </div>
@@ -127,11 +103,11 @@ function submit() {
         >
           <option value="">{{ $t('UNASSIGNED') }}</option>
           <option
-            v-for="person in store.members"
-            :key="person.id"
-            :value="person.id"
+            v-for="person in responsiblePersonList"
+            :key="person"
+            :value="person"
           >
-            {{ person.name }}
+            {{ person }}
           </option>
         </select>
       </div>
@@ -153,73 +129,13 @@ function submit() {
           </option>
         </select>
       </div>
-      <div>
-        <label :for="`${uid}-due`" class="field-label">{{
-          $t('DUE_DATE')
-        }}</label
-        ><Input :id="`${uid}-due`" v-model="draft.dueDate" type="date" />
-      </div>
       <slot />
-    </div>
-    <div>
-      <label :for="`${uid}-labels`" class="field-label">{{
-        $t('LABELS')
-      }}</label
-      ><Input
-        :id="`${uid}-labels`"
-        v-model="labels"
-        :placeholder="$t('LABELS_HINT')"
-        maxlength="310"
-      />
-    </div>
-    <div>
-      <label :for="`${uid}-checklist`" class="field-label">{{
-        $t('CHECKLIST')
-      }}</label>
-      <ul class="mb-3 space-y-2">
-        <li
-          v-for="(item, index) in draft.checklist"
-          :key="item.id"
-          class="flex items-center gap-2"
-        >
-          <input
-            :id="item.id"
-            v-model="item.done"
-            type="checkbox"
-            class="h-4 w-4 accent-blue-600"
-          /><label :for="item.id" class="flex-1 break-words text-sm">{{
-            item.text
-          }}</label
-          ><button
-            type="button"
-            :aria-label="$t('REMOVE_CHECKLIST_ITEM', { name: item.text })"
-            class="rounded px-2 text-muted-foreground"
-            @click="draft.checklist.splice(index, 1)"
-          >
-            ×
-          </button>
-        </li>
-      </ul>
-      <div class="flex gap-2">
-        <Input
-          :id="`${uid}-checklist`"
-          v-model="checklistText"
-          maxlength="300"
-          @keydown.enter.prevent="addChecklist"
-        /><Button
-          type="button"
-          variant="outline"
-          :disabled="!checklistText.trim() || draft.checklist.length >= 100"
-          @click="addChecklist"
-          >{{ $t('ADD') }}</Button
-        >
-      </div>
     </div>
     <div class="flex justify-end gap-2 border-t pt-5">
       <Button type="button" variant="outline" @click="emit('cancel')">{{
         $t('CANCEL')
       }}</Button
-      ><Button type="submit" :disabled="store.busy">{{ submitLabel }}</Button>
+      ><Button type="submit">{{ submitLabel }}</Button>
     </div>
   </form>
 </template>

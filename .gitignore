@@ -26,7 +26,3 @@ test-results/
 Thumbs.db
 *.swp
 *.swo
-
-# Database backups
-*.dump
-*.sql.gz

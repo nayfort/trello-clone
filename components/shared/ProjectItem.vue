@@ -1,27 +1,10 @@
 <script setup lang="ts">
-import {
-  Pencil,
-  Check,
-  Trash2,
-  X,
-  Archive,
-  ArchiveRestore,
-} from 'lucide-vue-next';
+import { Pencil, Check, Trash2, X } from 'lucide-vue-next';
 import type { Project } from '~/types/board';
 const props = defineProps<{ project: Project }>();
 const store = useProjectsStore();
 const localePath = useLocalePath();
 const editing = ref(false);
-watch(
-  editing,
-  (open) => {
-    store.editLocks += open ? 1 : -1;
-  },
-  { flush: 'sync' },
-);
-onBeforeUnmount(() => {
-  if (editing.value) store.editLocks--;
-});
 const name = ref('');
 const confirming = ref(false);
 const nameInput = ref<{ $el: HTMLInputElement }>();
@@ -38,9 +21,10 @@ async function cancel() {
   await nextTick();
   editButton.value?.$el.focus();
 }
-async function save() {
+function save() {
   if (!name.value.trim()) return;
-  if (await store.updateProjectName(props.project.id, name.value)) cancel();
+  store.updateProjectName(props.project.id, name.value);
+  cancel();
 }
 </script>
 <template>
@@ -77,7 +61,6 @@ async function save() {
         >{{ project.name }}</NuxtLink
       >
       <Button
-        v-if="store.writable && !project.archived"
         ref="editButton"
         variant="ghost"
         size="icon"
@@ -89,18 +72,6 @@ async function save() {
       >
     </template>
     <Button
-      v-if="store.writable"
-      variant="ghost"
-      size="icon"
-      :disabled="store.busy"
-      :aria-label="$t(project.archived ? 'RESTORE' : 'ARCHIVE')"
-      @click="store.archiveProject(project.id, !project.archived)"
-      ><component
-        :is="project.archived ? ArchiveRestore : Archive"
-        class="h-4 w-4"
-    /></Button>
-    <Button
-      v-if="store.manageable"
       variant="ghost"
       size="icon"
       class="shrink-0 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
