@@ -1,10 +1,6 @@
 <script setup lang="ts">
 import { emptyTask, normalizeTask } from '~/lib/board';
-import {
-  performerList,
-  responsiblePersonList,
-  PriorityOptions,
-} from '~/lib/constants';
+import { PriorityOptions } from '~/lib/constants';
 import type { TaskFields } from '~/types/board';
 const props = defineProps<{ initialValue?: TaskFields; submitLabel: string }>();
 const emit = defineEmits<{ submit: [fields: TaskFields]; cancel: [] }>();
@@ -13,17 +9,12 @@ const submitted = ref(false);
 const uid = useId();
 const errors = computed(() => ({
   name: submitted.value && !draft.name.trim(),
-  description: submitted.value && !draft.description.trim(),
 }));
 function submit() {
   submitted.value = true;
   const fields = normalizeTask(draft);
   if (!fields) {
-    nextTick(() =>
-      document
-        .getElementById(`${uid}-${errors.value.name ? 'name' : 'description'}`)
-        ?.focus(),
-    );
+    nextTick(() => document.getElementById(`${uid}-name`)?.focus());
     return;
   }
   emit('submit', fields);
@@ -53,63 +44,38 @@ function submit() {
       </p>
     </div>
     <div>
-      <label :for="`${uid}-description`" class="field-label"
-        >{{ $t('DESCRIPTION') }}
-        <span class="text-muted-foreground">*</span></label
-      ><Textarea
+      <label :for="`${uid}-description`" class="field-label">{{
+        $t('DESCRIPTION')
+      }}</label>
+      <Textarea
         :id="`${uid}-description`"
         v-model="draft.description"
-        :placeholder="`${$t('DESCRIPTION')}*`"
-        required
+        :placeholder="$t('DESCRIPTION_HINT')"
         rows="4"
-        :aria-invalid="errors.description"
-        :aria-describedby="
-          errors.description ? `${uid}-description-error` : undefined
-        "
-        :class="errors.description && 'border-destructive'"
       />
-      <p
-        v-if="errors.description"
-        :id="`${uid}-description-error`"
-        class="mt-1.5 text-xs text-destructive"
-      >
-        {{ $t('DESCRIPTION_REQUIRED') }}
-      </p>
     </div>
     <div class="grid gap-4 sm:grid-cols-2">
       <div>
         <label :for="`${uid}-performer`" class="field-label">{{
           $t('PERFORMER')
         }}</label
-        ><select
+        ><Input
           :id="`${uid}-performer`"
           v-model="draft.performer"
-          class="native-select"
-        >
-          <option value="">{{ $t('UNASSIGNED') }}</option>
-          <option v-for="person in performerList" :key="person" :value="person">
-            {{ person }}
-          </option>
-        </select>
+          :placeholder="$t('PERSON_HINT')"
+          maxlength="120"
+        />
       </div>
       <div>
         <label :for="`${uid}-responsible`" class="field-label">{{
           $t('RESPONSIBLE_PERSON')
-        }}</label
-        ><select
+        }}</label>
+        <Input
           :id="`${uid}-responsible`"
           v-model="draft.responsiblePerson"
-          class="native-select"
-        >
-          <option value="">{{ $t('UNASSIGNED') }}</option>
-          <option
-            v-for="person in responsiblePersonList"
-            :key="person"
-            :value="person"
-          >
-            {{ person }}
-          </option>
-        </select>
+          :placeholder="$t('PERSON_HINT')"
+          maxlength="120"
+        />
       </div>
       <div>
         <label :for="`${uid}-priority`" class="field-label">{{

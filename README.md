@@ -7,7 +7,7 @@ A Kanban task manager built with Nuxt 3, Vue 3, and TypeScript. Organize project
 - Create, rename, and delete projects.
 - Track tasks across **TODO**, **In progress**, and **Done** columns.
 - Drag cards between columns and reorder tasks within a column.
-- Create, edit, and delete tasks with descriptions, priorities, performers, and responsible people.
+- Create, edit, and delete tasks with optional descriptions, priorities, and custom names for performers and responsible people.
 - Keep projects and tasks in browser local storage across visits.
 - Switch between English and Ukrainian.
 - Choose light or dark mode.
@@ -23,7 +23,7 @@ npm ci
 npm run dev
 ```
 
-Open [localhost:3000](http://localhost:3000). A sample project is created on the first visit. The application runs without API keys or environment variables.
+Open [localhost:3000](http://localhost:3000). Create your first project from the project list. The application runs without API keys or environment variables.
 
 ## Commands
 

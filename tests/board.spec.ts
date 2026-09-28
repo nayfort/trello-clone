@@ -1,4 +1,9 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
+
+async function createProject(page: Page) {
+  await page.getByPlaceholder('Enter project name').fill('Test project');
+  await page.getByRole('button', { name: 'Add project', exact: true }).click();
+}
 
 test('project changes and an empty project list survive reload', async ({
   page,
@@ -22,14 +27,6 @@ test('project changes and an empty project list survive reload', async ({
     .getByRole('dialog', { name: 'Delete project?' })
     .getByRole('button', { name: 'Delete', exact: true })
     .click();
-  await page
-    .getByRole('button', { name: 'Remove', exact: true })
-    .first()
-    .click();
-  await page
-    .getByRole('dialog', { name: 'Delete project?' })
-    .getByRole('button', { name: 'Delete', exact: true })
-    .click();
   await page.reload();
   await expect(page.getByPlaceholder('Enter project name')).toBeVisible();
   await expect(page.getByRole('listitem')).toHaveCount(0);
@@ -41,6 +38,7 @@ test('task validation, editing, drag and drop, and large data persistence', asyn
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   await page.goto('/');
+  await createProject(page);
   await page.getByRole('link', { name: 'Test project', exact: true }).click();
   await page
     .getByRole('button', { name: 'Add task', exact: true })
@@ -51,7 +49,7 @@ test('task validation, editing, drag and drop, and large data persistence', asyn
   await expect(dialog).toBeVisible();
   await dialog.getByPlaceholder('Name*', { exact: true }).fill('Review');
   await dialog
-    .getByPlaceholder('Description*', { exact: true })
+    .getByLabel('Description', { exact: true })
     .fill('Long description '.repeat(500));
   await dialog.getByRole('button', { name: 'Add', exact: true }).click();
   await expect(dialog).toHaveCount(0);
@@ -142,9 +140,7 @@ test('language, theme and missing project route work', async ({ page }) => {
   await expect(page.getByPlaceholder('Enter project name')).toBeVisible();
   await page.getByRole('button', { name: 'UK', exact: true }).click();
   await expect(page).toHaveURL(/\/uk$/);
-  await expect(
-    page.getByRole('heading', { name: 'Управління проектами' }),
-  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Проекти' })).toBeVisible();
   await page.getByRole('button', { name: 'EN', exact: true }).click();
   const before = await page.locator('html').getAttribute('class');
   await page.getByRole('button', { name: 'Theme', exact: true }).click();
@@ -162,6 +158,7 @@ test('cancel keeps projects and tasks; keyboard editing can change task status',
   page,
 }) => {
   await page.goto('/');
+  await createProject(page);
   await page.getByRole('button', { name: 'Remove', exact: true }).click();
   await page
     .getByRole('dialog', { name: 'Delete project?' })
@@ -177,9 +174,7 @@ test('cancel keeps projects and tasks; keyboard editing can change task status',
   await dialog
     .getByLabel('Description', { exact: false })
     .fill('Accessible task editing');
-  await dialog
-    .getByLabel('Performer', { exact: true })
-    .selectOption('Jeff Miller');
+  await dialog.getByLabel('Performer', { exact: true }).fill('  Alex Morgan  ');
   await dialog.getByLabel('Priority', { exact: true }).selectOption('high');
   await dialog.getByRole('button', { name: 'Add', exact: true }).click();
   await page
@@ -204,7 +199,7 @@ test('cancel keeps projects and tasks; keyboard editing can change task status',
   await page
     .getByRole('button', { name: 'Keyboard task', exact: true })
     .click();
-  await expect(dialog.getByText('Jeff Miller', { exact: true })).toBeVisible();
+  await expect(dialog.getByText('Alex Morgan', { exact: true })).toBeVisible();
   await expect(dialog.getByText('High', { exact: true })).toBeVisible();
 });
 
@@ -231,7 +226,7 @@ test('storage write failures are reported without losing the current session', a
   page,
 }) => {
   await page.goto('/');
-  await page.getByRole('link', { name: 'Test project', exact: true }).waitFor();
+  await expect(page.getByPlaceholder('Enter project name')).toBeVisible();
   await page.evaluate(() => {
     const setItem = Storage.prototype.setItem;
     Storage.prototype.setItem = function (key, value) {
@@ -256,6 +251,7 @@ test('mobile navigation, localized form and focus work without overflow', async 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/');
   await expect(page.getByPlaceholder('Enter project name')).toBeVisible();
+  await createProject(page);
   await page.getByRole('button', { name: 'Open navigation' }).click();
   await page
     .getByRole('dialog')
@@ -298,4 +294,35 @@ test('migration preserves an empty workspace', async ({ page, context }) => {
   await page.reload();
   await expect(page.getByPlaceholder('Enter project name')).toBeVisible();
   await expect(page.getByRole('listitem')).toHaveCount(0);
+});
+
+test('fresh workspace has no demo content and tasks only require a name', async ({
+  page,
+}) => {
+  await page.goto('/dashboard');
+  await expect(page).toHaveURL('/');
+  await expect(page.getByRole('listitem')).toHaveCount(0);
+  await expect(
+    page.getByText('Create a project to start organizing your tasks.'),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('link', { name: 'Dashboard', exact: true }),
+  ).toHaveCount(0);
+  await createProject(page);
+  await page.getByRole('link', { name: 'Test project', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Add task', exact: true })
+    .first()
+    .click();
+  await page.getByLabel('Name', { exact: false }).fill('Quick task');
+  await page.getByRole('button', { name: 'Add', exact: true }).click();
+  await page.reload();
+  await page.getByRole('button', { name: 'Quick task', exact: true }).click();
+  await expect(page.getByText('No description added.')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await page.goto('/uk/dashboard');
+  await expect(page).toHaveURL('/uk');
+  await expect(
+    page.getByRole('link', { name: 'Test project', exact: true }),
+  ).toBeVisible();
 });

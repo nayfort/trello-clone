@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Folder, LayoutDashboard } from 'lucide-vue-next';
+import { Folder } from 'lucide-vue-next';
 const localePath = useLocalePath();
 const route = useRoute();
 const emit = defineEmits<{ close: [] }>();
@@ -16,24 +16,15 @@ const emit = defineEmits<{ close: [] }>();
     </header>
     <nav :aria-label="$t('WORKSPACE')" class="space-y-1 px-3">
       <NuxtLink
-        v-for="item in [
-          { href: '/', title: 'PROJECTS', icon: Folder },
-          { href: '/dashboard', title: 'DASHBOARD', icon: LayoutDashboard },
-        ]"
-        :key="item.href"
-        :to="localePath(item.href)"
-        :aria-current="
-          route.path === localePath(item.href) ? 'page' : undefined
-        "
+        :to="localePath('/')"
+        :aria-current="route.path === localePath('/') ? 'page' : undefined"
         class="flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
         :class="
-          route.path === localePath(item.href) &&
+          route.path === localePath('/') &&
           'bg-secondary text-secondary-foreground'
         "
         @click="emit('close')"
-        ><component :is="item.icon" class="h-[18px] w-[18px]" />{{
-          $t(item.title)
-        }}</NuxtLink
+        ><Folder class="h-[18px] w-[18px]" />{{ $t('PROJECTS') }}</NuxtLink
       >
     </nav>
   </div>

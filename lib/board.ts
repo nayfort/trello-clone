@@ -19,11 +19,13 @@ export function emptyTask(): TaskFields {
 export function normalizeTask(fields: TaskFields): TaskFields | null {
   const name = fields.name.trim();
   const description = fields.description.trim();
-  if (!name || !description) return null;
+  if (!name) return null;
   return {
     ...fields,
     name,
     description,
+    performer: fields.performer.trim(),
+    responsiblePerson: fields.responsiblePerson.trim(),
     priority: fields.priority || Priority.Low,
   };
 }

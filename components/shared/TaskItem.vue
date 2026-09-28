@@ -137,20 +137,24 @@ function remove() {
           <p
             class="max-h-64 overflow-y-auto whitespace-pre-wrap break-words text-sm leading-relaxed text-muted-foreground [overflow-wrap:anywhere]"
           >
-            {{ task.description }}
+            {{ task.description || $t('NO_DESCRIPTION') }}
           </p>
           <dl class="grid grid-cols-2 gap-4 rounded-lg bg-muted/60 p-4 text-sm">
             <div>
               <dt class="mb-1 text-xs text-muted-foreground">
                 {{ $t('PERFORMER') }}
               </dt>
-              <dd>{{ task.performer || $t('UNASSIGNED') }}</dd>
+              <dd class="break-words [overflow-wrap:anywhere]">
+                {{ task.performer || $t('UNASSIGNED') }}
+              </dd>
             </div>
             <div>
               <dt class="mb-1 text-xs text-muted-foreground">
                 {{ $t('RESPONSIBLE_PERSON') }}
               </dt>
-              <dd>{{ task.responsiblePerson || $t('UNASSIGNED') }}</dd>
+              <dd class="break-words [overflow-wrap:anywhere]">
+                {{ task.responsiblePerson || $t('UNASSIGNED') }}
+              </dd>
             </div>
           </dl>
           <div class="flex flex-wrap justify-between gap-2 border-t pt-4">

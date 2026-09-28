@@ -23,8 +23,6 @@ export const useProjectsStore = defineStore('projects-store', {
   actions: {
     init() {
       if (this.initialized || storageIssue.value === 'read') return;
-      if (!this.projects.length)
-        this.projects.push(createProject('Test project'));
       this.initialized = true;
     },
     getProject(id: string) {
